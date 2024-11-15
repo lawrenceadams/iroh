@@ -21,7 +21,7 @@ pub const ALPN: &[u8] = b"n0/quinn-bench/0";
 /// Creates a server endpoint which runs on the given runtime
 pub fn server_endpoint(rt: &tokio::runtime::Runtime, opt: &Opt) -> (SocketAddr, quinn::Endpoint) {
     let secret_key = iroh::key::SecretKey::generate();
-    let crypto = iroh::tls::TlsAuthentication::X509
+    let crypto = iroh::tls::Authentication::X509
         .make_server_config(&secret_key, vec![ALPN.to_vec()], false)
         .unwrap();
 
@@ -69,7 +69,7 @@ pub async fn connect_client(
     opt: Opt,
 ) -> Result<(::quinn::Endpoint, Connection)> {
     let secret_key = iroh::key::SecretKey::generate();
-    let quic_client_config = iroh::tls::TlsAuthentication::X509.make_client_config(
+    let quic_client_config = iroh::tls::Authentication::X509.make_client_config(
         &secret_key,
         None,
         vec![ALPN.to_vec()],

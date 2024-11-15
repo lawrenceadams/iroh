@@ -4,21 +4,21 @@ use iroh_base::key::SecretKey;
 use webpki::types::{pem::PemObject, CertificateDer, PrivateKeyDer};
 
 use super::{certificate, CreateConfigError};
-use crate::tls::TlsAuthentication;
+use crate::tls::Authentication;
 
 #[derive(Debug)]
 pub(crate) struct AlwaysResolvesCert {
     key: Arc<rustls::sign::CertifiedKey>,
-    auth: TlsAuthentication,
+    auth: Authentication,
 }
 
 impl AlwaysResolvesCert {
     pub(crate) fn new(
-        auth: TlsAuthentication,
+        auth: Authentication,
         secret_key: &SecretKey,
     ) -> Result<Self, CreateConfigError> {
         let key = match auth {
-            TlsAuthentication::X509 => {
+            Authentication::X509 => {
                 let (cert, key) = certificate::generate(secret_key)?;
                 let certified_key = rustls::sign::CertifiedKey::new(
                     vec![cert],
@@ -26,7 +26,7 @@ impl AlwaysResolvesCert {
                 );
                 Arc::new(certified_key)
             }
-            TlsAuthentication::RawPublicKey => {
+            Authentication::RawPublicKey => {
                 // Directly use the key
                 let client_private_key = secret_key.serialize_secret_pem();
                 let client_private_key =
@@ -63,7 +63,7 @@ impl rustls::client::ResolvesClientCert for AlwaysResolvesCert {
     }
 
     fn only_raw_public_keys(&self) -> bool {
-        matches!(self.auth, TlsAuthentication::RawPublicKey)
+        matches!(self.auth, Authentication::RawPublicKey)
     }
 
     fn has_certs(&self) -> bool {
@@ -80,6 +80,6 @@ impl rustls::server::ResolvesServerCert for AlwaysResolvesCert {
     }
 
     fn only_raw_public_keys(&self) -> bool {
-        matches!(self.auth, TlsAuthentication::RawPublicKey)
+        matches!(self.auth, Authentication::RawPublicKey)
     }
 }

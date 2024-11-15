@@ -19,7 +19,7 @@ use rustls::{
 };
 use webpki::{ring as webpki_algs, types::SubjectPublicKeyInfoDer};
 
-use super::{certificate, TlsAuthentication};
+use super::{certificate, Authentication};
 use crate::key::PublicKey;
 
 /// The only TLS version we support is 1.3
@@ -61,7 +61,7 @@ pub struct CertificateVerifier {
     /// The peer we intend to connect to.
     remote_peer_id: Option<PublicKey>,
     /// Which TLS authentication mode to operate in.
-    auth: TlsAuthentication,
+    auth: Authentication,
     trusted_spki: Vec<SubjectPublicKeyInfoDer<'static>>,
 }
 
@@ -74,11 +74,11 @@ pub struct CertificateVerifier {
 ///
 /// or a raw public key.
 impl CertificateVerifier {
-    pub fn new(auth: TlsAuthentication) -> Self {
+    pub fn new(auth: Authentication) -> Self {
         Self::with_remote_peer_id(auth, None)
     }
 
-    pub fn with_remote_peer_id(auth: TlsAuthentication, remote_peer_id: Option<PublicKey>) -> Self {
+    pub fn with_remote_peer_id(auth: Authentication, remote_peer_id: Option<PublicKey>) -> Self {
         let mut trusted_spki = Vec::new();
         if let Some(key) = remote_peer_id {
             let pem_key = key.serialize_public_pem();
@@ -105,7 +105,7 @@ impl ServerCertVerifier for CertificateVerifier {
         _now: rustls::pki_types::UnixTime,
     ) -> Result<ServerCertVerified, rustls::Error> {
         match self.auth {
-            TlsAuthentication::X509 => {
+            Authentication::X509 => {
                 let peer_id = verify_presented_certs(end_entity, intermediates)?;
 
                 if let Some(ref remote_peer_id) = self.remote_peer_id {
@@ -121,7 +121,7 @@ impl ServerCertVerifier for CertificateVerifier {
                 }
                 Ok(ServerCertVerified::assertion())
             }
-            TlsAuthentication::RawPublicKey => {
+            Authentication::RawPublicKey => {
                 let end_entity_as_spki = SubjectPublicKeyInfoDer::from(end_entity.as_ref());
                 match self.trusted_spki.contains(&end_entity_as_spki) {
                     false => Err(rustls::Error::InvalidCertificate(
@@ -151,10 +151,10 @@ impl ServerCertVerifier for CertificateVerifier {
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, rustls::Error> {
         match self.auth {
-            TlsAuthentication::X509 => {
+            Authentication::X509 => {
                 verify_tls13_signature(cert, dss.scheme, message, dss.signature())
             }
-            TlsAuthentication::RawPublicKey => verify_tls13_signature_with_raw_key(
+            Authentication::RawPublicKey => verify_tls13_signature_with_raw_key(
                 message,
                 &SubjectPublicKeyInfoDer::from(cert.as_ref()),
                 dss,
@@ -168,7 +168,7 @@ impl ServerCertVerifier for CertificateVerifier {
     }
 
     fn requires_raw_public_keys(&self) -> bool {
-        matches!(self.auth, TlsAuthentication::RawPublicKey)
+        matches!(self.auth, Authentication::RawPublicKey)
     }
 }
 
@@ -193,11 +193,11 @@ impl ClientCertVerifier for CertificateVerifier {
         _now: rustls::pki_types::UnixTime,
     ) -> Result<ClientCertVerified, rustls::Error> {
         match self.auth {
-            TlsAuthentication::X509 => {
+            Authentication::X509 => {
                 verify_presented_certs(end_entity, intermediates)?;
                 Ok(ClientCertVerified::assertion())
             }
-            TlsAuthentication::RawPublicKey => {
+            Authentication::RawPublicKey => {
                 let end_entity_as_spki = SubjectPublicKeyInfoDer::from(end_entity.as_ref());
                 match self.trusted_spki.contains(&end_entity_as_spki) {
                     false => Err(rustls::Error::InvalidCertificate(
@@ -227,10 +227,10 @@ impl ClientCertVerifier for CertificateVerifier {
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, rustls::Error> {
         match self.auth {
-            TlsAuthentication::X509 => {
+            Authentication::X509 => {
                 verify_tls13_signature(cert, dss.scheme, message, dss.signature())
             }
-            TlsAuthentication::RawPublicKey => verify_tls13_signature_with_raw_key(
+            Authentication::RawPublicKey => verify_tls13_signature_with_raw_key(
                 message,
                 &SubjectPublicKeyInfoDer::from(cert.as_ref()),
                 dss,
@@ -248,7 +248,7 @@ impl ClientCertVerifier for CertificateVerifier {
     }
 
     fn requires_raw_public_keys(&self) -> bool {
-        matches!(self.auth, TlsAuthentication::RawPublicKey)
+        matches!(self.auth, Authentication::RawPublicKey)
     }
 }
 

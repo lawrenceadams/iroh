@@ -1,7 +1,10 @@
-//! TLS configuration based on libp2p TLS specs.
+//! TLS configuration for iroh.
 //!
-//! See <https://github.com/libp2p/specs/blob/master/tls/tls.md>.
-//! Based on rust-libp2p/transports/tls
+//! Currently there are two mechanisms available
+//! - Raw Public Keys, using the TLS extension described in [RFC 7250]
+//! - libp2p-tls, based on <https://github.com/libp2p/specs/blob/master/tls/tls.md>.
+//!
+//! [RFC 7250]: https://datatracker.ietf.org/doc/html/rfc7250
 
 use std::sync::Arc;
 
@@ -15,31 +18,17 @@ pub mod certificate;
 mod resolver;
 mod verifier;
 
-/// Error for generating iroh p2p TLS configs.
-#[derive(Debug, thiserror::Error)]
-pub enum CreateConfigError {
-    /// Error generating the certificate.
-    #[error("Error generating the certificate")]
-    CertError(#[from] certificate::GenError),
-    /// Error creating QUIC config.
-    #[error("Error creating QUIC config")]
-    ConfigError(#[from] NoInitialCipherSuite),
-    /// Rustls configuration error
-    #[error("rustls error")]
-    Rustls(#[from] rustls::Error),
-}
-
 /// TLS Authentication mechanism
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq)]
-pub enum TlsAuthentication {
+pub enum Authentication {
     /// Self signed certificates, based on libp2p-tls
     #[default]
     X509,
-    /// RFC 7250 TLS extension Raw Public Keys.
+    /// RFC 7250 TLS extension: Raw Public Keys.
     RawPublicKey,
 }
 
-impl TlsAuthentication {
+impl Authentication {
     /// Create a TLS client configuration.
     ///
     /// If *keylog* is `true` this will enable logging of the pre-master key to the file in the
@@ -105,4 +94,18 @@ impl TlsAuthentication {
         let config = crypto.try_into()?;
         Ok(config)
     }
+}
+
+/// Error for generating TLS configs.
+#[derive(Debug, thiserror::Error)]
+pub enum CreateConfigError {
+    /// Error generating the certificate.
+    #[error("Error generating the certificate")]
+    CertError(#[from] certificate::GenError),
+    /// Error creating QUIC config.
+    #[error("Error creating QUIC config")]
+    ConfigError(#[from] NoInitialCipherSuite),
+    /// Rustls configuration error
+    #[error("rustls error")]
+    Rustls(#[from] rustls::Error),
 }
