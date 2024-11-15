@@ -450,7 +450,8 @@ pub fn make_server_config(
     transport_config: Arc<TransportConfig>,
     keylog: bool,
 ) -> Result<ServerConfig> {
-    let quic_server_config = tls::make_server_config(secret_key, alpn_protocols, keylog)?;
+    let quic_server_config =
+        tls::TlsAuthentication::X509.make_server_config(secret_key, alpn_protocols, keylog)?;
     let mut server_config = ServerConfig::with_crypto(Arc::new(quic_server_config));
     server_config.transport_config(transport_config);
 
@@ -635,7 +636,7 @@ impl Endpoint {
         debug!("Attempting connection...");
         let client_config = {
             let alpn_protocols = vec![alpn.to_vec()];
-            let quic_client_config = tls::make_client_config(
+            let quic_client_config = tls::TlsAuthentication::X509.make_client_config(
                 &self.static_config.secret_key,
                 Some(node_id),
                 alpn_protocols,

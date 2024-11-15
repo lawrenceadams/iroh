@@ -1,0 +1,85 @@
+use std::sync::Arc;
+
+use iroh_base::key::SecretKey;
+use webpki::types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+
+use super::{certificate, CreateConfigError};
+use crate::tls::TlsAuthentication;
+
+#[derive(Debug)]
+pub(crate) struct AlwaysResolvesCert {
+    key: Arc<rustls::sign::CertifiedKey>,
+    auth: TlsAuthentication,
+}
+
+impl AlwaysResolvesCert {
+    pub(crate) fn new(
+        auth: TlsAuthentication,
+        secret_key: &SecretKey,
+    ) -> Result<Self, CreateConfigError> {
+        let key = match auth {
+            TlsAuthentication::X509 => {
+                let (cert, key) = certificate::generate(secret_key)?;
+                let certified_key = rustls::sign::CertifiedKey::new(
+                    vec![cert],
+                    rustls::crypto::ring::sign::any_ecdsa_type(&key)?,
+                );
+                Arc::new(certified_key)
+            }
+            TlsAuthentication::RawPublicKey => {
+                // Directly use the key
+                let client_private_key = secret_key.serialize_secret_pem();
+                let client_private_key =
+                    PrivateKeyDer::from_pem_slice(client_private_key.as_bytes())
+                        .expect("cannot open private key file");
+                let client_private_key =
+                    rustls::crypto::ring::sign::any_ecdsa_type(&client_private_key)?;
+
+                let client_public_key = client_private_key
+                    .public_key()
+                    .ok_or(rustls::Error::InconsistentKeys(
+                        rustls::InconsistentKeys::Unknown,
+                    ))
+                    .expect("cannot load public key");
+                let client_public_key_as_cert = CertificateDer::from(client_public_key.to_vec());
+                let certified_key = rustls::sign::CertifiedKey::new(
+                    vec![client_public_key_as_cert],
+                    client_private_key,
+                );
+                Arc::new(certified_key)
+            }
+        };
+        Ok(Self { key, auth })
+    }
+}
+
+impl rustls::client::ResolvesClientCert for AlwaysResolvesCert {
+    fn resolve(
+        &self,
+        _root_hint_subjects: &[&[u8]],
+        _sigschemes: &[rustls::SignatureScheme],
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        Some(Arc::clone(&self.key))
+    }
+
+    fn only_raw_public_keys(&self) -> bool {
+        matches!(self.auth, TlsAuthentication::RawPublicKey)
+    }
+
+    fn has_certs(&self) -> bool {
+        true
+    }
+}
+
+impl rustls::server::ResolvesServerCert for AlwaysResolvesCert {
+    fn resolve(
+        &self,
+        _client_hello: rustls::server::ClientHello<'_>,
+    ) -> Option<Arc<rustls::sign::CertifiedKey>> {
+        Some(Arc::clone(&self.key))
+    }
+
+    fn only_raw_public_keys(&self) -> bool {
+        matches!(self.auth, TlsAuthentication::RawPublicKey)
+    }
+}

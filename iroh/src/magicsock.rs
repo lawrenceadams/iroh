@@ -3376,7 +3376,11 @@ mod tests {
             let key = SecretKey::generate();
             let conn = std::net::UdpSocket::bind(addr)?;
 
-            let quic_server_config = tls::make_server_config(&key, vec![ALPN.to_vec()], false)?;
+            let quic_server_config = tls::TlsAuthentication::X509.make_server_config(
+                &key,
+                vec![ALPN.to_vec()],
+                false,
+            )?;
             let mut server_config = quinn::ServerConfig::with_crypto(Arc::new(quic_server_config));
             let mut transport_config = quinn::TransportConfig::default();
             transport_config.keep_alive_interval(Some(Duration::from_secs(5)));
@@ -3389,8 +3393,12 @@ mod tests {
                 Arc::new(quinn::TokioRuntime),
             )?;
 
-            let quic_client_config =
-                tls::make_client_config(&key, None, vec![ALPN.to_vec()], false)?;
+            let quic_client_config = tls::TlsAuthentication::X509.make_client_config(
+                &key,
+                None,
+                vec![ALPN.to_vec()],
+                false,
+            )?;
             let mut client_config = quinn::ClientConfig::new(Arc::new(quic_client_config));
             let mut transport_config = quinn::TransportConfig::default();
             transport_config.max_idle_timeout(Some(Duration::from_secs(10).try_into().unwrap()));
@@ -3525,7 +3533,11 @@ mod tests {
             let key = SecretKey::generate();
             let conn = UdpConn::bind(addr)?;
 
-            let quic_server_config = tls::make_server_config(&key, vec![ALPN.to_vec()], false)?;
+            let quic_server_config = tls::TlsAuthentication::X509.make_server_config(
+                &key,
+                vec![ALPN.to_vec()],
+                false,
+            )?;
             let mut server_config = quinn::ServerConfig::with_crypto(Arc::new(quic_server_config));
             let mut transport_config = quinn::TransportConfig::default();
             transport_config.keep_alive_interval(Some(Duration::from_secs(5)));
@@ -3538,8 +3550,12 @@ mod tests {
                 Arc::new(quinn::TokioRuntime),
             )?;
 
-            let quic_client_config =
-                tls::make_client_config(&key, None, vec![ALPN.to_vec()], false)?;
+            let quic_client_config = tls::TlsAuthentication::X509.make_client_config(
+                &key,
+                None,
+                vec![ALPN.to_vec()],
+                false,
+            )?;
             let mut client_config = quinn::ClientConfig::new(Arc::new(quic_client_config));
             let mut transport_config = quinn::TransportConfig::default();
             transport_config.max_idle_timeout(Some(Duration::from_secs(10).try_into().unwrap()));
@@ -3831,8 +3847,12 @@ mod tests {
         transport_config: Arc<quinn::TransportConfig>,
     ) -> Result<quinn::Connection> {
         let alpns = vec![ALPN.to_vec()];
-        let quic_client_config =
-            tls::make_client_config(&ep_secret_key, Some(node_id), alpns, true)?;
+        let quic_client_config = tls::TlsAuthentication::X509.make_client_config(
+            &ep_secret_key,
+            Some(node_id),
+            alpns,
+            true,
+        )?;
         let mut client_config = quinn::ClientConfig::new(Arc::new(quic_client_config));
         client_config.transport_config(transport_config);
         let connect = ep.connect_with(client_config, addr.0, "localhost")?;
