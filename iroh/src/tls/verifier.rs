@@ -122,7 +122,16 @@ impl ServerCertVerifier for CertificateVerifier {
                 Ok(ServerCertVerified::assertion())
             }
             Authentication::RawPublicKey => {
+                if !intermediates.is_empty() {
+                    return Err(rustls::Error::InvalidCertificate(
+                        CertificateError::UnknownIssuer,
+                    ));
+                }
+                if self.trusted_spki.is_empty() {
+                    return Ok(ServerCertVerified::assertion());
+                }
                 let end_entity_as_spki = SubjectPublicKeyInfoDer::from(end_entity.as_ref());
+
                 match self.trusted_spki.contains(&end_entity_as_spki) {
                     false => Err(rustls::Error::InvalidCertificate(
                         CertificateError::UnknownIssuer,
@@ -198,6 +207,14 @@ impl ClientCertVerifier for CertificateVerifier {
                 Ok(ClientCertVerified::assertion())
             }
             Authentication::RawPublicKey => {
+                if !intermediates.is_empty() {
+                    return Err(rustls::Error::InvalidCertificate(
+                        CertificateError::UnknownIssuer,
+                    ));
+                }
+                if self.trusted_spki.is_empty() {
+                    return Ok(ClientCertVerified::assertion());
+                }
                 let end_entity_as_spki = SubjectPublicKeyInfoDer::from(end_entity.as_ref());
                 match self.trusted_spki.contains(&end_entity_as_spki) {
                     false => Err(rustls::Error::InvalidCertificate(
