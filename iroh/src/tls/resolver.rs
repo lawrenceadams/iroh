@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use iroh_base::key::SecretKey;
-use webpki::types::{pem::PemObject, CertificateDer, PrivateKeyDer};
+use webpki::types::{pem::PemObject, CertificateDer, PrivateKeyDer, PrivatePkcs8KeyDer};
 
 use super::{certificate, CreateConfigError};
 use crate::tls::Authentication;
@@ -29,23 +29,27 @@ impl AlwaysResolvesCert {
             Authentication::RawPublicKey => {
                 // Directly use the key
                 let client_private_key = secret_key.serialize_secret_pem();
+                dbg!(&client_private_key);
                 let client_private_key =
-                    PrivateKeyDer::from_pem_slice(client_private_key.as_bytes())
+                    PrivatePkcs8KeyDer::from_pem_slice(client_private_key.as_bytes())
                         .expect("cannot open private key file");
+                dbg!(&client_private_key);
                 let client_private_key =
-                    rustls::crypto::ring::sign::any_ecdsa_type(&client_private_key)?;
-
+                    rustls::crypto::ring::sign::any_eddsa_type(&client_private_key)?;
+                dbg!(&client_private_key);
                 let client_public_key = client_private_key
                     .public_key()
                     .ok_or(rustls::Error::InconsistentKeys(
                         rustls::InconsistentKeys::Unknown,
                     ))
                     .expect("cannot load public key");
+                dbg!(&client_public_key);
                 let client_public_key_as_cert = CertificateDer::from(client_public_key.to_vec());
                 let certified_key = rustls::sign::CertifiedKey::new(
                     vec![client_public_key_as_cert],
                     client_private_key,
                 );
+                dbg!(&certified_key);
                 Arc::new(certified_key)
             }
         };
