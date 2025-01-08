@@ -1004,10 +1004,6 @@ impl Endpoint {
             return;
         }
 
-        tracing::debug!("Closing connections");
-        self.endpoint.close(0u16.into(), b"");
-        self.endpoint.wait_idle().await;
-
         tracing::debug!("Connections closed");
         self.msock.close().await;
     }
