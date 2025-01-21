@@ -81,13 +81,11 @@ use crate::{
 mod metrics;
 mod node_map;
 mod relay_actor;
-mod timer;
 #[cfg(not(wasm_browser))]
 mod udp_conn;
 
 pub use node_map::Source;
 
-pub(super) use self::timer::Timer;
 pub use self::{
     metrics::Metrics,
     node_map::{ConnectionType, ControlMsg, DirectAddrInfo, RemoteInfo},
