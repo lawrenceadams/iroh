@@ -104,7 +104,7 @@
 //! [`LocalSwarmDiscovery`]: local_swarm_discovery::LocalSwarmDiscovery
 //! [`StaticProvider`]: static_provider::StaticProvider
 
-use std::{collections::BTreeSet, net::SocketAddr, sync::Arc, time::Duration};
+use std::{collections::BTreeSet, net::SocketAddr, sync::Arc};
 
 use anyhow::{anyhow, ensure, Result};
 #[cfg(not(wasm_browser))]
@@ -113,6 +113,7 @@ use futures_lite::stream::Boxed as BoxStream;
 use futures_lite::stream::BoxedLocal as BoxStream;
 use futures_lite::stream::StreamExt;
 use iroh_base::{NodeAddr, NodeId, RelayUrl};
+use iroh_relay::time::{self, Duration};
 use net_report::task::{self, AbortOnDropHandle};
 use tokio::sync::oneshot;
 use tracing::{debug, error_span, warn, Instrument};
@@ -331,7 +332,7 @@ impl DiscoveryTask {
             async move {
                 // If delay is set, wait and recheck if discovery is needed. If not, early-exit.
                 if let Some(delay) = delay {
-                    tokio::time::sleep(delay).await;
+                    time::sleep(delay).await;
                     if !Self::needs_discovery(&ep, node_id) {
                         debug!("no discovery needed, abort");
                         on_first_tx.send(Ok(())).ok();
@@ -525,7 +526,7 @@ mod tests {
                     };
                     let delay = self.delay;
                     let fut = async move {
-                        tokio::time::sleep(delay).await;
+                        time::sleep(delay).await;
                         tracing::debug!(
                             "resolve on {}: {} = {item:?}",
                             endpoint.node_id().fmt_short(),

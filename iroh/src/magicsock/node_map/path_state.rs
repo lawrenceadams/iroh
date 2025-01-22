@@ -3,11 +3,11 @@
 use std::{
     collections::{BTreeMap, HashMap},
     net::SocketAddr,
-    time::{Duration, Instant},
 };
 
 use iroh_base::NodeId;
 use iroh_relay::protos::stun;
+use iroh_relay::time::{Duration, Instant};
 use tracing::{debug, event, Level};
 
 use super::{

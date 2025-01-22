@@ -25,7 +25,11 @@ async fn main() -> Result<()> {
     let router = accept_side().await?;
     let node_addr = router.endpoint().node_addr().await?;
 
+    println!("Connect with NodeId {}", node_addr.node_id);
+
     connect_side(node_addr).await?;
+
+    tokio::signal::ctrl_c().await?;
 
     router.shutdown().await?;
 
@@ -50,6 +54,9 @@ async fn connect_side(addr: NodeAddr) -> Result<()> {
     // Receive the echo
     let response = recv.read_to_end(1000).await?;
     assert_eq!(&response, b"Hello, world!");
+
+    conn.close(0u32.into(), b"bye!");
+    conn.closed().await;
 
     Ok(())
 }

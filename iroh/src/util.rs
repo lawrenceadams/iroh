@@ -73,7 +73,7 @@ impl<T: Future> Future for MaybeFuture<T> {
 mod tests {
     use std::pin::pin;
 
-    use tokio::time::Duration;
+    use iroh_relay::time::Duration;
 
     use super::*;
 
@@ -86,7 +86,7 @@ mod tests {
         assert_eq!(res, "hello");
 
         // Now poll again
-        let res = tokio::time::timeout(Duration::from_millis(10), maybe_fut).await;
+        let res = iroh_relay::time::timeout(Duration::from_millis(10), maybe_fut).await;
         assert!(res.is_err());
     }
 }

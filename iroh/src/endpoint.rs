@@ -19,11 +19,11 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::Poll,
-    time::Duration,
 };
 
 use anyhow::{bail, Context, Result};
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
+use iroh_relay::time::Duration;
 use iroh_relay::RelayMap;
 use pin_project::pin_project;
 use tracing::{debug, instrument, trace, warn};

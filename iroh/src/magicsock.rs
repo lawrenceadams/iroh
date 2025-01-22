@@ -26,7 +26,6 @@ use std::{
         Arc, RwLock,
     },
     task::{Context, Poll, Waker},
-    time::{Duration, Instant},
 };
 
 use anyhow::{anyhow, Context as _, Result};
@@ -41,7 +40,7 @@ use futures_lite::{FutureExt, StreamExt};
 use futures_util::task::AtomicWaker;
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
 use iroh_metrics::{inc, inc_by};
-use iroh_relay::time;
+use iroh_relay::time::{self, Duration, Instant};
 use iroh_relay::{protos::stun, RelayMap};
 use net_report::task;
 use net_report::task::JoinSet;
@@ -1991,8 +1990,9 @@ impl AsyncUdpSocket for Handle {
             }
             (_, Some(ipv6)) => Ok(*ipv6),
         }
+        // Again, we need to pretend we're IPv6, because of our QuinnMappedAddrs.
         #[cfg(wasm_browser)]
-        return Ok(SocketAddr::new(std::net::Ipv4Addr::UNSPECIFIED.into(), 0));
+        return Ok(SocketAddr::new(std::net::Ipv6Addr::LOCALHOST.into(), 0));
     }
 
     #[cfg(not(wasm_browser))]
@@ -2097,7 +2097,7 @@ struct Actor {
     relay_actor_cancel_token: CancellationToken,
     /// When set, is an AfterFunc timer that will call MagicSock::do_periodic_stun.
     #[cfg(not(wasm_browser))]
-    periodic_re_stun_timer: tokio::time::Interval,
+    periodic_re_stun_timer: time::Interval,
     /// The `NetInfo` provided in the last call to `net_info_func`. It's used to deduplicate calls to netInfoFunc.
     net_info_last: Option<NetInfo>,
 
@@ -2143,7 +2143,7 @@ impl Actor {
 
         // Let the the heartbeat only start a couple seconds later
         #[cfg(not(wasm_browser))]
-        let mut direct_addr_heartbeat_timer = tokio::time::interval_at(
+        let mut direct_addr_heartbeat_timer = time::interval_at(
             time::Instant::now() + HEARTBEAT_INTERVAL,
             HEARTBEAT_INTERVAL,
         );
@@ -2585,7 +2585,7 @@ impl Actor {
         match self.net_reporter.get_report_channel(relay_map, opts).await {
             Ok(rx) => {
                 let msg_sender = self.msg_sender.clone();
-                tokio::task::spawn(async move {
+                task::spawn(async move {
                     let report = time::timeout(NET_REPORT_TIMEOUT, rx).await;
                     let report: anyhow::Result<_> = match report {
                         Ok(Ok(Ok(report))) => Ok(Some(report)),
@@ -2753,20 +2753,20 @@ impl Actor {
 }
 
 #[cfg(not(wasm_browser))]
-fn new_re_stun_timer(initial_delay: bool) -> tokio::time::Interval {
+fn new_re_stun_timer(initial_delay: bool) -> time::Interval {
     // Pick a random duration between 20 and 26 seconds (just under 30s,
     // a common UDP NAT timeout on Linux,etc)
     let mut rng = rand::thread_rng();
     let d: Duration = rng.gen_range(Duration::from_secs(20)..=Duration::from_secs(26));
     if initial_delay {
         debug!("scheduling periodic_stun to run in {}s", d.as_secs());
-        tokio::time::interval_at(time::Instant::now() + d, d)
+        time::interval_at(time::Instant::now() + d, d)
     } else {
         debug!(
             "scheduling periodic_stun to run immediately and in {}s",
             d.as_secs()
         );
-        tokio::time::interval(d)
+        time::interval(d)
     }
 }
 

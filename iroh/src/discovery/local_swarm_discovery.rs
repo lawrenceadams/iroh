@@ -33,7 +33,6 @@
 use std::{
     collections::{BTreeSet, HashMap},
     net::{IpAddr, SocketAddr},
-    time::Duration,
 };
 
 use anyhow::Result;
@@ -41,6 +40,7 @@ use derive_more::FromStr;
 use futures_lite::stream::Boxed as BoxStream;
 use futures_util::FutureExt;
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl};
+use iroh_relay::time::{self, Duration};
 use swarm_discovery::{Discoverer, DropGuard, IpClass, Peer};
 use tokio::{
     sync::mpsc::{
@@ -270,7 +270,7 @@ impl LocalSwarmDiscovery {
                         }
                         let timeout_sender = task_sender.clone();
                         timeouts.spawn(async move {
-                            tokio::time::sleep(DISCOVERY_DURATION).await;
+                            time::sleep(DISCOVERY_DURATION).await;
                             trace!(?node_id, "discovery timeout");
                             timeout_sender
                                 .send(Message::Timeout(node_id, id))

@@ -9,13 +9,15 @@ use std::{
     fmt::Write,
     net::{IpAddr, Ipv6Addr},
     sync::OnceLock,
-    time::Duration,
 };
 
 use anyhow::Result;
 use futures_lite::{Future, StreamExt};
 use hickory_resolver::{IntoName, Resolver, TokioResolver};
 use iroh_base::{NodeAddr, NodeId};
+use iroh_relay::time::{self, Duration};
+
+use crate::node_info;
 
 /// The DNS resolver type used throughout `iroh`.
 pub type DnsResolver = TokioResolver;
@@ -185,7 +187,7 @@ impl ResolverExt for DnsResolver {
         host: N,
         timeout: Duration,
     ) -> Result<impl Iterator<Item = IpAddr>> {
-        let addrs = tokio::time::timeout(timeout, self.ipv4_lookup(host)).await??;
+        let addrs = time::timeout(timeout, self.ipv4_lookup(host)).await??;
         Ok(addrs.into_iter().map(|ip| IpAddr::V4(ip.0)))
     }
 
@@ -194,7 +196,7 @@ impl ResolverExt for DnsResolver {
         host: N,
         timeout: Duration,
     ) -> Result<impl Iterator<Item = IpAddr>> {
-        let addrs = tokio::time::timeout(timeout, self.ipv6_lookup(host)).await??;
+        let addrs = time::timeout(timeout, self.ipv6_lookup(host)).await??;
         Ok(addrs.into_iter().map(|ip| IpAddr::V6(ip.0)))
     }
 
@@ -352,7 +354,7 @@ async fn stagger_call<T, F: Fn() -> Fut, Fut: Future<Output = Result<T>>>(
         let delay = std::time::Duration::from_millis(*delay);
         let fut = f();
         let staggered_fut = async move {
-            tokio::time::sleep(delay).await;
+            time::sleep(delay).await;
             fut.await
         };
         calls.push(staggered_fut)
