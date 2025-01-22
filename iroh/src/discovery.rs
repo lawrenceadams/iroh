@@ -107,14 +107,19 @@
 use std::{collections::BTreeSet, net::SocketAddr, sync::Arc, time::Duration};
 
 use anyhow::{anyhow, ensure, Result};
-use futures_lite::stream::{Boxed as BoxStream, StreamExt};
+#[cfg(not(wasm_browser))]
+use futures_lite::stream::Boxed as BoxStream;
+#[cfg(wasm_browser)]
+use futures_lite::stream::BoxedLocal as BoxStream;
+use futures_lite::stream::StreamExt;
 use iroh_base::{NodeAddr, NodeId, RelayUrl};
+use net_report::task::{self, AbortOnDropHandle};
 use tokio::sync::oneshot;
-use tokio_util::task::AbortOnDropHandle;
 use tracing::{debug, error_span, warn, Instrument};
 
 use crate::Endpoint;
 
+#[cfg(not(wasm_browser))]
 pub mod dns;
 
 #[cfg(feature = "discovery-local-network")]
@@ -290,7 +295,7 @@ impl DiscoveryTask {
         ensure!(ep.discovery().is_some(), "No discovery services configured");
         let (on_first_tx, on_first_rx) = oneshot::channel();
         let me = ep.node_id();
-        let task = tokio::task::spawn(
+        let task = task::spawn(
             async move { Self::run(ep, node_id, on_first_tx).await }.instrument(
                 error_span!("discovery", me = %me.fmt_short(), node = %node_id.fmt_short()),
             ),
@@ -322,7 +327,7 @@ impl DiscoveryTask {
         let (on_first_tx, on_first_rx) = oneshot::channel();
         let ep = ep.clone();
         let me = ep.node_id();
-        let task = tokio::task::spawn(
+        let task = task::spawn(
             async move {
                 // If delay is set, wait and recheck if discovery is needed. If not, early-exit.
                 if let Some(delay) = delay {
@@ -420,12 +425,6 @@ impl DiscoveryTask {
             let err = anyhow!("Discovery produced no results for {}", node_id.fmt_short());
             tx.send(Err(err)).ok();
         }
-    }
-}
-
-impl Drop for DiscoveryTask {
-    fn drop(&mut self) {
-        self.task.abort();
     }
 }
 

@@ -17,6 +17,10 @@ use std::{
     time::SystemTime,
 };
 
+#[cfg(not(wasm_browser))]
+use futures_lite::stream::Boxed as BoxStream;
+#[cfg(wasm_browser)]
+use futures_lite::stream::BoxedLocal as BoxStream;
 use futures_lite::stream::{self, StreamExt};
 use iroh_base::{NodeAddr, NodeId, RelayUrl};
 
@@ -206,7 +210,7 @@ impl Discovery for StaticProvider {
         &self,
         _endpoint: crate::Endpoint,
         node_id: NodeId,
-    ) -> Option<futures_lite::stream::Boxed<anyhow::Result<super::DiscoveryItem>>> {
+    ) -> Option<BoxStream<anyhow::Result<super::DiscoveryItem>>> {
         let guard = self.nodes.read().expect("poisoned");
         let info = guard.get(&node_id);
         match info {

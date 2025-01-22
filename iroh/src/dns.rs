@@ -17,8 +17,6 @@ use futures_lite::{Future, StreamExt};
 use hickory_resolver::{IntoName, Resolver, TokioResolver};
 use iroh_base::{NodeAddr, NodeId};
 
-pub mod node_info;
-
 /// The DNS resolver type used throughout `iroh`.
 pub type DnsResolver = TokioResolver;
 

@@ -47,20 +47,21 @@
 use std::{collections::BTreeSet, net::SocketAddr, sync::Arc};
 
 use anyhow::{anyhow, bail, Result};
-use futures_util::stream::BoxStream;
+#[cfg(not(wasm_browser))]
+use futures_lite::stream::Boxed as BoxStream;
+#[cfg(wasm_browser)]
+use futures_lite::stream::BoxedLocal as BoxStream;
 use iroh_base::{NodeId, RelayUrl, SecretKey};
+use iroh_relay::time::{self, Duration, Instant};
+use net_report::task::{self, AbortOnDropHandle};
 use pkarr::SignedPacket;
-use tokio::{
-    task::JoinHandle,
-    time::{Duration, Instant},
-};
 use tracing::{debug, error_span, info, warn, Instrument};
 use url::Url;
 
 use crate::{
     discovery::{Discovery, DiscoveryItem},
-    dns::node_info::NodeInfo,
     endpoint::force_staging_infra,
+    node_info::NodeInfo,
     watchable::{Disconnected, Watchable, Watcher},
     Endpoint,
 };
@@ -116,7 +117,7 @@ pub const DEFAULT_REPUBLISH_INTERVAL: Duration = Duration::from_secs(60 * 5);
 pub struct PkarrPublisher {
     node_id: NodeId,
     watchable: Watchable<Option<NodeInfo>>,
-    join_handle: Arc<JoinHandle<()>>,
+    join_handle: Arc<AbortOnDropHandle<()>>,
 }
 
 impl PkarrPublisher {
@@ -145,7 +146,7 @@ impl PkarrPublisher {
         secret_key: SecretKey,
         pkarr_relay: Url,
         ttl: u32,
-        republish_interval: std::time::Duration,
+        republish_interval: time::Duration,
     ) -> Self {
         debug!("creating pkarr publisher that publishes to {pkarr_relay}");
         let node_id = secret_key.public();
@@ -158,7 +159,7 @@ impl PkarrPublisher {
             pkarr_client,
             republish_interval,
         };
-        let join_handle = tokio::task::spawn(
+        let join_handle = task::spawn(
             service
                 .run()
                 .instrument(error_span!("pkarr_publish", me=%node_id.fmt_short())),
@@ -166,7 +167,7 @@ impl PkarrPublisher {
         Self {
             watchable,
             node_id,
-            join_handle: Arc::new(join_handle),
+            join_handle: Arc::new(AbortOnDropHandle::new(join_handle)),
         }
     }
 
@@ -212,15 +213,6 @@ impl Discovery for PkarrPublisher {
     }
 }
 
-impl Drop for PkarrPublisher {
-    fn drop(&mut self) {
-        // this means we're dropping the last reference
-        if let Some(handle) = Arc::get_mut(&mut self.join_handle) {
-            handle.abort();
-        }
-    }
-}
-
 /// Publish node info to a pkarr relay.
 #[derive(derive_more::Debug, Clone)]
 struct PublisherService {
@@ -236,7 +228,7 @@ struct PublisherService {
 impl PublisherService {
     async fn run(mut self) {
         let mut failed_attempts = 0;
-        let republish = tokio::time::sleep(Duration::MAX);
+        let republish = time::sleep(Duration::MAX);
         tokio::pin!(republish);
         loop {
             let Ok(info) = self.watcher.get() else {
@@ -336,11 +328,7 @@ impl PkarrResolver {
 }
 
 impl Discovery for PkarrResolver {
-    fn resolve(
-        &self,
-        _ep: Endpoint,
-        node_id: NodeId,
-    ) -> Option<BoxStream<'static, Result<DiscoveryItem>>> {
+    fn resolve(&self, _ep: Endpoint, node_id: NodeId) -> Option<BoxStream<Result<DiscoveryItem>>> {
         let pkarr_client = self.pkarr_client.clone();
         let fut = async move {
             let signed_packet = pkarr_client.resolve(node_id).await?;
@@ -377,7 +365,8 @@ impl PkarrRelayClient {
 
     /// Resolves a [`SignedPacket`] for the given [`NodeId`].
     pub async fn resolve(&self, node_id: NodeId) -> anyhow::Result<SignedPacket> {
-        let public_key = pkarr::PublicKey::try_from(node_id.as_bytes())?;
+        let public_key = pkarr::PublicKey::try_from(node_id.as_bytes())
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
         let mut url = self.pkarr_relay_url.clone();
         url.path_segments_mut()
             .map_err(|_| anyhow!("Failed to resolve: Invalid relay URL"))?
@@ -393,7 +382,8 @@ impl PkarrRelayClient {
         }
 
         let payload = response.bytes().await?;
-        Ok(SignedPacket::from_relay_payload(&public_key, &payload)?)
+        Ok(SignedPacket::from_relay_payload(&public_key, &payload)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?)
     }
 
     /// Publishes a [`SignedPacket`].
