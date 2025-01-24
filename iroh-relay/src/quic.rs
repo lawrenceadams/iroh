@@ -193,26 +193,16 @@ pub(crate) mod server {
 /// Handles the client side of QUIC address discovery.
 #[derive(Debug)]
 pub struct QuicClient {
-    /// client id
-    id: [u8; 8],
     /// A QUIC Endpoint.
     ep: quinn::Endpoint,
     /// A client config.
     client_config: quinn::ClientConfig,
 }
 
-impl Drop for QuicClient {
-    fn drop(&mut self) {
-        tracing::error!("DROPPED QUIC CLIENT {:?}", self.id)
-    }
-}
-
 impl QuicClient {
     /// Create a new QuicClient to handle the client side of QUIC
     /// address discovery.
     pub fn new(ep: quinn::Endpoint, mut client_config: rustls::ClientConfig) -> Result<Self> {
-        let id: [u8; 8] = rand::random();
-        tracing::error!("STARTING QUIC CLIENT {id:?}");
         // add QAD alpn
         client_config.alpn_protocols = vec![ALPN_QUIC_ADDR_DISC.into()];
         // go from rustls client config to rustls QUIC specific client config to
@@ -225,11 +215,7 @@ impl QuicClient {
         transport.receive_observed_address_reports(true);
         client_config.transport_config(Arc::new(transport));
 
-        Ok(Self {
-            ep,
-            client_config,
-            id,
-        })
+        Ok(Self { ep, client_config })
     }
 
     /// Client side of QUIC address discovery.
