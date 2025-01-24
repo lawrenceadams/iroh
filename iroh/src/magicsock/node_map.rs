@@ -7,7 +7,7 @@ use std::{
 
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl};
 use iroh_metrics::inc;
-use iroh_relay::time::Instant;
+use n0_future::time::Instant;
 use serde::{Deserialize, Serialize};
 use stun_rs::TransactionId;
 use tracing::{debug, info, instrument, trace, warn};

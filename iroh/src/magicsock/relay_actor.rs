@@ -45,14 +45,15 @@ use futures_lite::StreamExt;
 use futures_util::SinkExt;
 use iroh_base::{NodeId, PublicKey, RelayUrl, SecretKey};
 use iroh_metrics::{inc, inc_by};
-use iroh_relay::time::{Duration, Instant};
 use iroh_relay::{
     self as relay,
     client::{Client, ReceivedMessage, SendMessage},
-    time::{self, MissedTickBehavior},
     PingTracker, MAX_PACKET_SIZE,
 };
-use net_report::task::JoinSet;
+use n0_future::{
+    task::JoinSet,
+    time::{self, Duration, Instant, MissedTickBehavior},
+};
 use tokio::sync::{mpsc, oneshot};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, event, info_span, instrument, trace, warn, Instrument, Level};
@@ -427,10 +428,10 @@ impl ActiveRelayActor {
         struct Sleeper;
 
         impl backoff::future::Sleeper for Sleeper {
-            type Sleep = iroh_relay::time::Sleep;
+            type Sleep = time::Sleep;
 
             fn sleep(&self, dur: Duration) -> Self::Sleep {
-                iroh_relay::time::sleep(dur)
+                time::sleep(dur)
             }
         }
 

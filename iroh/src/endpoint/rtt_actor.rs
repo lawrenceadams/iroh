@@ -6,7 +6,7 @@ use futures_buffered::MergeUnbounded;
 use futures_lite::{Stream, StreamExt};
 use iroh_base::NodeId;
 use iroh_metrics::inc;
-use net_report::task::{self, AbortOnDropHandle};
+use n0_future::task::{self, AbortOnDropHandle};
 use tokio::sync::mpsc;
 use tracing::{debug, info_span, Instrument};
 

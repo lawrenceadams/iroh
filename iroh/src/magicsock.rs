@@ -40,10 +40,11 @@ use futures_lite::{FutureExt, StreamExt};
 use futures_util::task::AtomicWaker;
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
 use iroh_metrics::{inc, inc_by};
-use iroh_relay::time::{self, Duration, Instant};
 use iroh_relay::{protos::stun, RelayMap};
-use net_report::task;
-use net_report::task::JoinSet;
+use n0_future::{
+    task::{self, JoinSet},
+    time::{self, Duration, Instant},
+};
 #[cfg(not(wasm_browser))]
 use netwatch::{interfaces, ip::LocalAddresses, netmon, UdpSocket};
 use quinn::AsyncUdpSocket;

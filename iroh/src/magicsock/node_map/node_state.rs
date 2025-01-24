@@ -8,8 +8,10 @@ use data_encoding::HEXLOWER;
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl};
 use iroh_metrics::inc;
 use iroh_relay::protos::stun;
-use iroh_relay::time::{self, Duration, Instant};
-use net_report::task::{self, AbortOnDropHandle};
+use n0_future::{
+    task::{self, AbortOnDropHandle},
+    time::{self, Duration, Instant},
+};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tracing::{debug, event, info, instrument, trace, warn, Level};

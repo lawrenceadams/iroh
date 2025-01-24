@@ -7,7 +7,7 @@ use std::{
 
 use iroh_base::NodeId;
 use iroh_relay::protos::stun;
-use iroh_relay::time::{Duration, Instant};
+use n0_future::time::{Duration, Instant};
 use tracing::{debug, event, Level};
 
 use super::{

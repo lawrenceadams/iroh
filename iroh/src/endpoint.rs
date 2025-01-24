@@ -23,8 +23,8 @@ use std::{
 
 use anyhow::{bail, Context, Result};
 use iroh_base::{NodeAddr, NodeId, PublicKey, RelayUrl, SecretKey};
-use iroh_relay::time::Duration;
 use iroh_relay::RelayMap;
+use n0_future::time::Duration;
 use pin_project::pin_project;
 use tracing::{debug, instrument, trace, warn};
 use url::Url;

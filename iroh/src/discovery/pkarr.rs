@@ -52,8 +52,10 @@ use futures_lite::stream::Boxed as BoxStream;
 #[cfg(wasm_browser)]
 use futures_lite::stream::BoxedLocal as BoxStream;
 use iroh_base::{NodeId, RelayUrl, SecretKey};
-use iroh_relay::time::{self, Duration, Instant};
-use net_report::task::{self, AbortOnDropHandle};
+use n0_future::{
+    task::{self, AbortOnDropHandle},
+    time::{self, Duration, Instant},
+};
 use pkarr::SignedPacket;
 use tracing::{debug, error_span, info, warn, Instrument};
 use url::Url;

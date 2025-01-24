@@ -39,6 +39,7 @@ futures-sink = "0.3"
 futures-util = "0.3"
 iroh-base = { version = "0.31.0", default-features = false, features = ["key", "relay"], path = "../iroh-base" }
 iroh-relay = { version = "0.31", path = "../iroh-relay", default-features = false }
+n0-future = "0.0.1"
 net-report = { package = "iroh-net-report", path = "../iroh-net-report", version = "0.31", default-features = false }
 pin-project = "1"
 pkarr = { version = "2", default-features = false, features = [

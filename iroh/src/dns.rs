@@ -15,7 +15,7 @@ use anyhow::Result;
 use futures_lite::{Future, StreamExt};
 use hickory_resolver::{IntoName, Resolver, TokioResolver};
 use iroh_base::{NodeAddr, NodeId};
-use iroh_relay::time::{self, Duration};
+use n0_future::time::{self, Duration};
 
 use crate::node_info;
 

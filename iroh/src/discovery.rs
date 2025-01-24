@@ -113,8 +113,10 @@ use futures_lite::stream::Boxed as BoxStream;
 use futures_lite::stream::BoxedLocal as BoxStream;
 use futures_lite::stream::StreamExt;
 use iroh_base::{NodeAddr, NodeId, RelayUrl};
-use iroh_relay::time::{self, Duration};
-use net_report::task::{self, AbortOnDropHandle};
+use n0_future::{
+    task::{self, AbortOnDropHandle},
+    time::{self, Duration},
+};
 use tokio::sync::oneshot;
 use tracing::{debug, error_span, warn, Instrument};
 

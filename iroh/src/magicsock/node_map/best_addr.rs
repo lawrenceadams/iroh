@@ -2,7 +2,7 @@
 
 use std::net::SocketAddr;
 
-use iroh_relay::time::{Duration, Instant};
+use n0_future::time::{Duration, Instant};
 use tracing::{debug, info};
 
 /// How long we trust a UDP address as the exclusive path (without using relay) without having heard a Pong reply.

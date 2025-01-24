@@ -7,7 +7,7 @@
 //! [`NodeState`]: super::node_state::NodeState
 use std::{collections::BTreeMap, net::SocketAddr};
 
-use iroh_relay::time::{Duration, Instant};
+use n0_future::time::{Duration, Instant};
 use rand::seq::IteratorRandom;
 use tracing::warn;
 
