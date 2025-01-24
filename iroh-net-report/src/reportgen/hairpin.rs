@@ -16,6 +16,7 @@ use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
 use anyhow::{bail, Context, Result};
 use iroh_relay::protos::stun;
+use n0_future::task;
 use netwatch::UdpSocket;
 use tokio::sync::oneshot;
 use tokio_util::task::AbortOnDropHandle;
@@ -24,7 +25,7 @@ use tracing::{debug, error, info_span, trace, warn, Instrument};
 use crate::{
     self as net_report,
     defaults::timeouts::HAIRPIN_CHECK_TIMEOUT,
-    reportgen, task,
+    reportgen,
     time::{self, Instant},
     Inflight,
 };
@@ -180,7 +181,7 @@ impl Actor {
 #[cfg(test)]
 mod tests {
     use bytes::BytesMut;
-    use iroh_relay::time::Duration;
+    use n0_future::time::Duration;
     use tokio::sync::mpsc;
     use tracing::info;
 

@@ -9,11 +9,11 @@ use std::{collections::BTreeSet, fmt, sync::Arc};
 use anyhow::{ensure, Result};
 use iroh_base::RelayUrl;
 use iroh_relay::{RelayMap, RelayNode};
+use n0_future::time::Duration;
 #[cfg(not(wasm_browser))]
 use netwatch::interfaces;
 
 use crate::Report;
-use iroh_relay::time::Duration;
 
 /// The retransmit interval used when net_report first runs.
 ///

@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use iroh_relay::time::Duration;
+use n0_future::time::Duration;
 use surge_ping::{Client, Config, IcmpPacket, PingIdentifier, PingSequence, ICMP};
 use tracing::debug;
 

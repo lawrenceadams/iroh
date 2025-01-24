@@ -3,7 +3,7 @@ use std::{fmt::Write, net::IpAddr};
 use anyhow::Result;
 use futures_lite::{Future, StreamExt};
 use hickory_resolver::{IntoName, TokioResolver};
-use iroh_relay::time;
+use n0_future::time;
 
 use crate::defaults::timeouts::DNS_TIMEOUT;
 

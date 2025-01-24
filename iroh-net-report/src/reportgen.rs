@@ -25,7 +25,6 @@ use std::{
     task::{Context, Poll},
 };
 
-use crate::task::{self, AbortOnDropHandle, JoinSet};
 use anyhow::{anyhow, bail, Context as _, Result};
 use futures_lite::StreamExt as _;
 #[cfg(not(wasm_browser))]
@@ -37,8 +36,11 @@ use iroh_relay::{
     defaults::{DEFAULT_RELAY_QUIC_PORT, DEFAULT_STUN_PORT},
     http::RELAY_PROBE_PATH,
     protos::stun,
-    time::{self, Duration, Instant},
     RelayMap, RelayNode,
+};
+use n0_future::{
+    task::{self, AbortOnDropHandle, JoinSet},
+    time::{self, Duration, Instant},
 };
 #[cfg(not(wasm_browser))]
 use netwatch::{interfaces, UdpSocket};

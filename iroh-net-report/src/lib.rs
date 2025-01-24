@@ -16,7 +16,6 @@ use std::{
     sync::Arc,
 };
 
-use crate::task::AbortOnDropHandle;
 use anyhow::{anyhow, Result};
 use bytes::Bytes;
 #[cfg(not(wasm_browser))]
@@ -24,10 +23,10 @@ use hickory_resolver::TokioResolver as DnsResolver;
 use iroh_base::RelayUrl;
 #[cfg(feature = "metrics")]
 use iroh_metrics::inc;
-use iroh_relay::{
-    protos::stun,
+use iroh_relay::{protos::stun, RelayMap};
+use n0_future::{
+    task::{self, AbortOnDropHandle},
     time::{self, Duration, Instant},
-    RelayMap,
 };
 #[cfg(not(wasm_browser))]
 use netwatch::UdpSocket;
@@ -41,8 +40,6 @@ mod metrics;
 #[cfg(not(wasm_browser))]
 mod ping;
 mod reportgen;
-
-pub mod task;
 
 pub use metrics::Metrics;
 use reportgen::ProbeProto;
